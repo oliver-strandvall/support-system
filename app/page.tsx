@@ -1,3 +1,5 @@
+import { db } from "@/db";
+import { users } from "@/db/schema";
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -8,12 +10,21 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export default function Home() {
+export default async function Home() {
+
+  const allUsers = await db.select().from(users);
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center">
-        <h1>IT Support System</h1>
-        <p>We Help With IT Related Issues</p>
-        <Card className="mx-auto w-full max-w-sm">
+        <Card className="mx-auto w-full max-w-sm mt-5">
+          <CardHeader>
+            <h1>IT Support System</h1>
+          </CardHeader>
+          <CardDescription className="ml-4">
+            <p>We Help With IT Related Issues</p>
+          </CardDescription>
+        </Card>
+        <Card className="mx-auto w-full max-w-sm mt-5">
           <CardHeader>
             <CardTitle>Terms of Service</CardTitle>
             <CardDescription>
@@ -46,6 +57,17 @@ export default function Home() {
             <Button>Accept</Button>
           </CardFooter>
         </Card>
+        <h1 className="mt-5">All Users:</h1>
+        {allUsers.map((user) => (
+          <Card key={user.id} className="mx-auto w-full max-w-sm mt-5">
+            <CardHeader>
+              <p>{user.name}</p>
+            </CardHeader>
+            <CardDescription className="ml-4">
+              <p>{user.email}</p>
+            </CardDescription>
+          </Card>
+        ))}
     </div>
   );
 }

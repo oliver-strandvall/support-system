@@ -10,8 +10,7 @@ import {
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-black font-sans">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-black">
+    <div className="flex flex-col flex-1 items-center justify-center">
         <h1>IT Support System</h1>
         <p>We Help With IT Related Issues</p>
         <Card className="mx-auto w-full max-w-sm">
@@ -47,7 +46,6 @@ export default function Home() {
             <Button>Accept</Button>
           </CardFooter>
         </Card>
-      </main>
     </div>
   );
 }

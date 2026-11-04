@@ -1,6 +1,7 @@
 import { db } from "@/db";
-import { categories, tickets } from "@/db/schema";
+import { categories, tickets, users } from "@/db/schema";
 import { Button } from "@/components/ui/button"
+import TicketForm from "@/components/TicketForm";
 import {
   Card,
   CardContent,
@@ -9,7 +10,35 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
 import Link from "next/link";
+import { Field, FieldGroup } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { revalidatePath } from "next/cache";
+
+type FormState = {error?: string};
 
 export default async function TicketsPage() {
 
@@ -18,17 +47,62 @@ export default async function TicketsPage() {
         return(categories[ticket.categoryId - 1])
     }
 
-    const tickets = await db.query.tickets.findMany({
+    const allTickets = await db.query.tickets.findMany({
         with: {
             user: true,
-        }
+        },
+        orderBy: (tickets, { desc }) => [
+            desc(tickets.createdAt),
+            desc(tickets.id),
+        ],
     })
 
+    const allUsers = await db.select().from(users);
+    const allCategories = await db.select().from(categories);
+
+    async function newTicket(_previousState: FormState, formData: FormData) {
+        "use server";
+
+        const title = String(formData.get("title") ?? "").trim();
+        const description = String(formData.get("description") ?? "").trim();
+        const userId = Number(formData.get("userId"));
+        const categoryId = Number(formData.get("categoryId"));
+
+        if(!title) {
+            return {error: "Missing title"};
+        }
+
+        if(!description) {
+            return {error: "Missing description"};
+        }
+
+        if(!Number.isInteger(userId)) {
+            return {error: "Missing or invalid user"};
+        }
+
+        if(!Number.isInteger(categoryId)) {
+            return {error: "Missing or invalid category"};
+        }
+
+        console.log(`Inserting ${title}, ${description}, ${userId} and ${categoryId} to database`);
+
+        await db.insert(tickets).values({ title, description, userId, categoryId });
+        revalidatePath("/tickets");
+        return {};
+    }
+
     return(
-        <div className="flex flex-col flex-1 items-center justify-center">
-            <h1 className="mt-5">Tickets:</h1>
-            {tickets.map((ticket) => (
-                <Card key={ticket.id} className="mx-auto w-full max-w-sm mt-3 mb-3">
+        <div className="flex flex-col flex-1 items-center justify-center mb-5">
+            <div className="flex justify-between flex-row w-full max-w-sm items-center mt-5">
+                <h1>Tickets:</h1>
+                <TicketForm
+                    action={newTicket}
+                    allUsers={allUsers}
+                    allCategories={allCategories}
+                />
+            </div>
+            {allTickets.map((ticket) => (
+                <Card key={ticket.id} className="mx-auto w-full max-w-sm mt-5">
                     <CardHeader>
                         <div className="flex flex-wrap justify-between">
                             <h1 className="font-bold">{ticket.title}</h1>
@@ -66,7 +140,7 @@ export default async function TicketsPage() {
                     </CardDescription>
                     <div className="ml-5 mr-5">
                         <Link href={`/tickets/${ticket.id}`}>
-                            <Button variant="outline" className="w-full cursor-pointer">More</Button>
+                            <Button variant="outline" className="w-full cursor-pointer">Show More</Button>
                         </Link>
                     </div>
                 </Card>
